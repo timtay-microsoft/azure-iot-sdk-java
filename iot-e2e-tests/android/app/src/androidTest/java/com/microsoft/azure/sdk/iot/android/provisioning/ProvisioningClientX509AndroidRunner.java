@@ -31,7 +31,7 @@ public class ProvisioningClientX509AndroidRunner extends ProvisioningTests
     @Rule
     public ReportHelper reportHelper = Factory.getReportHelper();
 
-    public ProvisioningClientAndroidRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
+    public ProvisioningClientX509AndroidRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
     {
         super(protocol, attestationType);
     }

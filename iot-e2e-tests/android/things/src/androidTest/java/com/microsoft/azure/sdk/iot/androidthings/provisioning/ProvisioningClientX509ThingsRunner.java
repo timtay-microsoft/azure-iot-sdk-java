@@ -6,7 +6,6 @@
 package com.microsoft.azure.sdk.iot.androidthings.provisioning;
 
 import com.microsoft.azure.sdk.iot.androidthings.BuildConfig;
-import com.microsoft.azure.sdk.iot.androidthings.helper.TestGroupB;
 import com.microsoft.azure.sdk.iot.common.helpers.Rerun;
 import com.microsoft.azure.sdk.iot.common.setup.ProvisioningCommon;
 import com.microsoft.azure.sdk.iot.common.tests.provisioning.ProvisioningTests;
@@ -18,14 +17,13 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
-@TestGroupB
 @RunWith(Parameterized.class)
-public class ProvisioningClientThingsRunner extends ProvisioningTests
+public class ProvisioningClientX509ThingsRunner extends ProvisioningTests
 {
     @Rule
     public Rerun count = new Rerun(3);
 
-    public ProvisioningClientThingsRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
+    public ProvisioningClientX509ThingsRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
     {
         super(protocol, attestationType);
     }

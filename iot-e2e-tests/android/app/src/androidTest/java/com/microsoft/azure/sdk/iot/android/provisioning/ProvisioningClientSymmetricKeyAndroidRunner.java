@@ -31,7 +31,7 @@ public class ProvisioningClientSymmetricKeyAndroidRunner extends ProvisioningTes
     @Rule
     public ReportHelper reportHelper = Factory.getReportHelper();
 
-    public ProvisioningClientAndroidRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
+    public ProvisioningClientSymmetricKeyAndroidRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
     {
         super(protocol, attestationType);
     }

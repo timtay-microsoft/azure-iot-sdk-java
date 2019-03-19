@@ -20,12 +20,12 @@ import java.util.Collection;
 
 @TestGroupA
 @RunWith(Parameterized.class)
-public class ProvisioningClientThingsRunner extends ProvisioningTests
+public class ProvisioningClientSymmetricKeyThingsRunner extends ProvisioningTests
 {
     @Rule
     public Rerun count = new Rerun(3);
 
-    public ProvisioningClientThingsRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
+    public ProvisioningClientSymmetricKeyThingsRunner(ProvisioningDeviceClientTransportProtocol protocol, AttestationType attestationType)
     {
         super(protocol, attestationType);
     }
