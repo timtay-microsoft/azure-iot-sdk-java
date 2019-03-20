@@ -984,7 +984,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
         }
 
         // Codes_SRS_AMQPSTRANSPORT_34_077: [The function shall attempt to send the Proton message to IoTHub using the underlying AMQPS connection.]
-        Integer sendHash = this.sendMessage(amqpsConvertToProtonReturnValue.getMessageImpl(), amqpsConvertToProtonReturnValue.getMessageType(), message.getConnectionDeviceId());
+        Integer sendHash = this.sendMessage(amqpsConvertToProtonReturnValue.getMessageImpl(), amqpsConvertToProtonReturnValue.getMessageType(), message.getDeviceId());
 
         if (sendHash != -1)
         {

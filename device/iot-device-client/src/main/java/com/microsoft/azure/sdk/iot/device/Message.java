@@ -143,6 +143,8 @@ public class Message
     private ByteArrayInputStream bodyStream;
     private CustomLogger logger;
 
+    private String deviceId;
+
     // ----- Constructors -----
 
     /**
@@ -436,6 +438,11 @@ public class Message
         return this.messageType;
     }
 
+    public String getDeviceId()
+    {
+        return deviceId;
+    }
+
     public void setConnectionDeviceId(String connectionDeviceId)
     {
         // Codes_SRS_MESSAGE_34_051: [The function shall set the message's connection device id to the provided value.]
@@ -446,6 +453,11 @@ public class Message
     {
         // Codes_SRS_MESSAGE_34_052: [The function shall set the message's connection module id to the provided value.]
         this.connectionModuleId = connectionModuleId;
+    }
+
+    public void setDeviceId(String deviceId)
+    {
+        this.deviceId = deviceId;
     }
 
     /**
