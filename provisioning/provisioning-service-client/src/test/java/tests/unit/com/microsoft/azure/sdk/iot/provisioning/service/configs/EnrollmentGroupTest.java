@@ -5,6 +5,7 @@ package tests.unit.com.microsoft.azure.sdk.iot.provisioning.service.configs;
 
 import com.google.gson.*;
 import com.microsoft.azure.sdk.iot.deps.serializer.ParserUtility;
+import com.microsoft.azure.sdk.iot.deps.twin.DeviceCapabilities;
 import com.microsoft.azure.sdk.iot.deps.util.Base64;
 import com.microsoft.azure.sdk.iot.provisioning.service.configs.*;
 import com.microsoft.azure.sdk.iot.provisioning.service.exceptions.ProvisioningServiceClientException;
@@ -1777,5 +1778,36 @@ public class EnrollmentGroupTest
 
         //assert
         assertEquals(expectedIotHubs, actualIotHubs);
+    }
+
+    /* SRS_ENROLLMENT_GROUP_34_073: [This function shall save the provided capabilities.] */
+    @Test
+    public void setDeviceCapabilitiesSucceed()
+    {
+        // arrange
+        EnrollmentGroup enrollmentGroup = makeMockedSymmetricKeyEnrollmentGroup();
+        final DeviceCapabilities capabilities = new DeviceCapabilities();
+        assertNotEquals(capabilities, Deencapsulation.getField(enrollmentGroup, "capabilities"));
+
+        // act
+        enrollmentGroup.setCapabilities(capabilities);
+
+        // assert
+        assertEquals(capabilities, Deencapsulation.getField(enrollmentGroup, "capabilities"));
+    }
+
+    /* SRS_ENROLLMENT_GROUP_34_074: [This function shall return the saved capabilities.] */
+    @Test
+    public void getDeviceCapabilitiesSucceed()
+    {
+        EnrollmentGroup enrollmentGroup = makeMockedSymmetricKeyEnrollmentGroup();
+        final DeviceCapabilities capabilities = new DeviceCapabilities();
+        Deencapsulation.setField(enrollmentGroup, "capabilities", capabilities);
+
+        //act
+        DeviceCapabilities actualDeviceCapabilities = enrollmentGroup.getCapabilities();
+
+        //assert
+        assertEquals(capabilities, actualDeviceCapabilities);
     }
 }

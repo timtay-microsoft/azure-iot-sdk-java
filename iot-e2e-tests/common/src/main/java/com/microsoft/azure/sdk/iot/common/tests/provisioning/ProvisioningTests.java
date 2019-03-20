@@ -9,6 +9,7 @@ import com.microsoft.azure.sdk.iot.common.helpers.CorrelationDetailsLoggingAsser
 import com.microsoft.azure.sdk.iot.common.helpers.IotHubServicesCommon;
 import com.microsoft.azure.sdk.iot.common.helpers.Tools;
 import com.microsoft.azure.sdk.iot.common.setup.ProvisioningCommon;
+import com.microsoft.azure.sdk.iot.deps.twin.DeviceCapabilities;
 import com.microsoft.azure.sdk.iot.device.DeviceClient;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.Property;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.PropertyCallBack;
@@ -27,6 +28,7 @@ import com.microsoft.azure.sdk.iot.service.RegistryManager;
 import com.microsoft.azure.sdk.iot.service.devicetwin.DeviceTwin;
 import com.microsoft.azure.sdk.iot.service.devicetwin.DeviceTwinDevice;
 import com.microsoft.azure.sdk.iot.service.devicetwin.Pair;
+import com.microsoft.azure.sdk.iot.service.devicetwin.Query;
 import com.microsoft.azure.sdk.iot.service.exceptions.IotHubException;
 import com.microsoft.azure.sdk.iot.service.exceptions.IotHubNotFoundException;
 import org.junit.Test;
@@ -78,6 +80,45 @@ public class ProvisioningTests extends ProvisioningCommon
         expectedHubsToProvisionTo.add(getHostName(iotHubConnectionString));
         expectedHubsToProvisionTo.add(getHostName(farAwayIotHubConnectionString));
         registerDevice(testInstance.protocol, testInstance.securityProvider, provisioningServiceGlobalEndpoint, true, expectedHubsToProvisionTo);
+
+        // delete enrollment
+        cleanUpReprovisionedDeviceAndEnrollment(testInstance.provisionedDeviceId, EnrollmentType.GROUP);
+    }
+
+    @Test
+    public void individualEnrollmentProvisioningFlowWithEdgeDevice() throws Exception
+    {
+        DeviceCapabilities expectedDeviceCapabilities = new DeviceCapabilities();
+        expectedDeviceCapabilities.setIotEdge(true);
+        ArrayList<String> expectedHubsToProvisionTo = new ArrayList<>();
+        expectedHubsToProvisionTo.add(getHostName(iotHubConnectionString));
+        testInstance.securityProvider = getSecurityProviderInstance(EnrollmentType.INDIVIDUAL, null, null, null, expectedHubsToProvisionTo, expectedDeviceCapabilities);
+        registerDevice(testInstance.protocol, testInstance.securityProvider, provisioningServiceGlobalEndpoint, true, null, getHostName(iotHubConnectionString), getHostName(farAwayIotHubConnectionString));
+
+        assertProvisionedDeviceIsEdgeDevice();
+
+        // delete enrollment
+        cleanUpReprovisionedDeviceAndEnrollment(testInstance.provisionedDeviceId, EnrollmentType.INDIVIDUAL);
+    }
+
+    @Test
+    public void enrollmentGroupProvisioningFlowWithEdgeDevice() throws Exception
+    {
+        if (testInstance.attestationType != AttestationType.SYMMETRIC_KEY)
+        {
+            //tpm doesn't support group, and x509 group test has not been implemented yet
+            return;
+        }
+
+        ArrayList<String> expectedHubsToProvisionTo = new ArrayList<>();
+        expectedHubsToProvisionTo.add(getHostName(iotHubConnectionString));
+
+        DeviceCapabilities expectedDeviceCapabilities = new DeviceCapabilities();
+        expectedDeviceCapabilities.setIotEdge(true);
+        testInstance.securityProvider = getSecurityProviderInstance(EnrollmentType.GROUP, AllocationPolicy.HASHED, null, null, expectedHubsToProvisionTo, expectedDeviceCapabilities);
+        registerDevice(testInstance.protocol, testInstance.securityProvider, provisioningServiceGlobalEndpoint, true, expectedHubsToProvisionTo);
+
+        assertProvisionedDeviceIsEdgeDevice();
 
         // delete enrollment
         cleanUpReprovisionedDeviceAndEnrollment(testInstance.provisionedDeviceId, EnrollmentType.GROUP);
