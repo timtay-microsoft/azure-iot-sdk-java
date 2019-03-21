@@ -20,6 +20,9 @@
   }, {
     "name" : "eventhub",
     "description" : "EventHub APIs"
+  },{
+    "name" : "provisioning",
+    "description" : "ProvisioningServiceClient and ProvisioningDeviceClient APIs"
   }, {
     "name" : "registry",
     "description" : "registry APIs"
@@ -944,6 +947,66 @@
         "x-contentType" : "application/json",
         "x-accepts" : "application/json"
       }
+    },
+    "/provisioning/connect" : {
+      "put" : {
+        "tags" : [ "provisioning" ],
+        "summary" : "Connect to provisioning service",
+        "description" : "Connect to the Azure Device Provisioning Service.  More specifically, the SDK saves the connection string that is passed in for future use.",
+        "parameters" : [ {
+          "name" : "connectionString",
+          "in" : "query",
+          "description" : "Device Provisioning Service connection string",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/connectResponse"
+            }
+          }
+        },
+        "x-accepts" : "application/json"
+      }
+    },
+    "/provisioning/provisionDevice/{attestationType}/{enrollmentType}" : {
+      "put" : {
+        "tags" : [ "provisioning" ],
+        "summary" : "Connect to provisioning service",
+        "description" : "Connect to the Azure Device Provisioning Service.  More specifically, the SDK saves the connection string that is passed in for future use.",
+        "parameters" : [ {
+          "name" : "attestationType",
+          "in" : "path",
+          "description" : "attestation type for provisioning the device. May be 'tpm', 'x509', or 'symmetricKey'",
+          "required" : true,
+          "type" : "string"
+        },
+        {
+          "name" : "enrollmentType",
+          "in" : "path",
+          "description" : "enrollment type for provisioning the device. May be 'group', or 'individual'",
+          "required" : true,
+          "type" : "string"
+        },
+        {
+          "name" : "isEdge",
+          "in" : "query",
+          "description" : "if the provisioned device should be an edge device or not. False by default",
+          "required" : false,
+          "type" : "boolean"
+        }],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/provisionedDevice"
+            }
+          }
+        },
+        "x-accepts" : "application/json"
+      }
     }
   },
   "definitions" : {
@@ -983,6 +1046,16 @@
         "cert" : {
           "type" : "string",
           "description" : "unique identifier for this connection"
+        }
+      },
+      "description" : "certificate in the body of a message"
+    },
+    "provisionedDevice" : {
+      "type" : "object",
+      "properties" : {
+        "deviceId" : {
+          "type" : "string",
+          "description" : "the id of the provisioned device"
         }
       },
       "description" : "certificate in the body of a message"
