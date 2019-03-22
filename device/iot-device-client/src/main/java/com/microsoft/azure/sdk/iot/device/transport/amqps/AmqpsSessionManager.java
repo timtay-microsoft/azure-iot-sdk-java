@@ -94,7 +94,7 @@ public class AmqpsSessionManager
             throw new IllegalArgumentException("deviceClientConfig cannot be null.");
         }
 
-        // Codes_SRS_AMQPSESSIONMANAGER_12_009: [The function shall create a new  AmqpsSessionDeviceOperation with the given deviceClietnConfig and add it to the session list.]
+        // Codes_SRS_AMQPSESSIONMANAGER_12_009: [The function shall create a new  AmqpsSessionDeviceOperation with the given deviceClientConfig and add it to the session list.]
         AmqpsSessionDeviceOperation amqpsSessionDeviceOperation = new AmqpsSessionDeviceOperation(deviceClientConfig, this.amqpsDeviceAuthentication);
         this.amqpsDeviceSessionList.add(amqpsSessionDeviceOperation);
     }
@@ -167,7 +167,7 @@ public class AmqpsSessionManager
      *
      * @throws TransportException if open lock throws.
      */
-    public void openDeviceOperationLinks() throws TransportException
+    public void openDeviceOperationLinks(MessageType msgType) throws TransportException
     {
         logger.LogDebug("Entered in method %s", logger.getMethodName());
 
@@ -179,7 +179,7 @@ public class AmqpsSessionManager
                 if (this.amqpsDeviceSessionList.get(i) != null)
                 {
                     // Codes_SRS_AMQPSESSIONMANAGER_12_019: [The function shall call openLinks on all session list members.]
-                    this.amqpsDeviceSessionList.get(i).openLinks(this.session);
+                    this.amqpsDeviceSessionList.get(i).openLinks(this.session, msgType);
 
                     synchronized (this.openLinksLock)
                     {
@@ -229,7 +229,7 @@ public class AmqpsSessionManager
                 for (int i = 0; i < this.amqpsDeviceSessionList.size(); i++)
                 {
                     // Codes_SRS_AMQPSESSIONMANAGER_12_042: [The function shall call openLinks on all device sessions if the session is not null and the authentication is open.]
-                    this.amqpsDeviceSessionList.get(i).openLinks(this.session);
+                    this.amqpsDeviceSessionList.get(i).openLinks(this.session, MessageType.DEVICE_TELEMETRY);
                 }
             }
             else
