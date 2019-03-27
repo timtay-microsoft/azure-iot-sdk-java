@@ -228,7 +228,7 @@ public class AmqpsSessionDeviceOperation
                             this.amqpsDeviceOperationsMap.put(DEVICE_METHODS, new AmqpsDeviceMethods(this.deviceClientConfig));
                             break;
                         case DEVICE_TWIN:
-                            this.amqpsDeviceOperationsMap.put(DEVICE_TWIN, new AmqpsDeviceMethods(this.deviceClientConfig));
+                            this.amqpsDeviceOperationsMap.put(DEVICE_TWIN, new AmqpsDeviceTwin(this.deviceClientConfig));
                             break;
                         default:
                             break;

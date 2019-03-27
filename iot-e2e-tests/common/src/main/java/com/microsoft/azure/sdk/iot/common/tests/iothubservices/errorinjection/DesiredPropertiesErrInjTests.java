@@ -230,6 +230,8 @@ public class DesiredPropertiesErrInjTests extends DeviceTwinCommon
         setConnectionStatusCallBack(actualStatusUpdates);
         subscribeToDesiredPropertiesAndVerify(1);
 
+        System.out.println("finishing with normal operation");
+
         // Act
         errorInjectionMessage.setExpiryTime(100);
         MessageAndResult errorInjectionMsgAndRet = new MessageAndResult(errorInjectionMessage, null);

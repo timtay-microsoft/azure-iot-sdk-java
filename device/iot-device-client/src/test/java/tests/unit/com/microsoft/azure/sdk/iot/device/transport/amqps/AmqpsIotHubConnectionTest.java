@@ -836,7 +836,7 @@ public class AmqpsIotHubConnectionTest {
         };
 
         // act
-        connection.openLinks(MessageType.DEVICE_TELEMETRY);
+        connection.openLinks();
 
         // assert
         Deencapsulation.setField(connection, "amqpsSessionManager", mockAmqpsSessionManager);
@@ -870,7 +870,7 @@ public class AmqpsIotHubConnectionTest {
         };
 
         // act
-        connection.openLinks(MessageType.DEVICE_TELEMETRY);
+        connection.openLinks();
 
         // assert
         Deencapsulation.setField(connection, "amqpsSessionManager", mockAmqpsSessionManager);

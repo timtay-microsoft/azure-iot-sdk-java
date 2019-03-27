@@ -84,6 +84,9 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
     private final static String APPLICATION_PROPERTY_STATUS_CODE = "status-code";
     private final static String APPLICATION_PROPERTY_STATUS_DESCRIPTION = "status-description";
 
+    private boolean methodSubscribed;
+    private boolean twinSubscribed;
+
     /**
      * Constructor to set up connection parameters using the {@link DeviceClientConfig}.
      *
@@ -209,7 +212,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
                 this.authenticate();
 
                 // Codes_SRS_AMQPSIOTHUBCONNECTION_12_058: [The function shall call the connection to open device client links.]
-                this.openLinks(DEVICE_TELEMETRY);
+                this.openLinks();
 
                 if (this.savedException != null)
                 {
@@ -304,7 +307,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
      *
      * @throws TransportException if Proton throws.
      */
-    public void openLinks(MessageType msgType) throws TransportException
+    public void openLinks() throws TransportException
     {
         logger.LogDebug("Entered in method %s", logger.getMethodName());
 
@@ -312,7 +315,17 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
         if (this.amqpsSessionManager.isAuthenticationOpened())
         {
             // Codes_SRS_AMQPSIOTHUBCONNECTION_12_023: [The function shall call AmqpsSessionManager.openDeviceOperationLinks.]
-            this.amqpsSessionManager.openDeviceOperationLinks(msgType);
+            this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_TELEMETRY);
+
+            if (methodSubscribed)
+            {
+                this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_METHODS);
+            }
+
+            if (twinSubscribed)
+            {
+                this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_TWIN);
+            }
         }
 
         logger.LogDebug("Exited from method %s", logger.getMethodName());
@@ -1200,22 +1213,25 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
                     if (((IotHubTransportMessage) message).getDeviceOperationType() == DEVICE_OPERATION_METHOD_SUBSCRIBE_REQUEST)
                     {
                         this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_METHODS);
+                        methodSubscribed = true;
                         handled = true;
                     }
 
                     break;
                 case DEVICE_TWIN:
-                    if (((IotHubTransportMessage) message).getDeviceOperationType() == DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_REQUEST)
-                    {
-                        this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_TWIN);
-                        handled = true;
-                    }
+                    if (((IotHubTransportMessage) message).getDeviceOperationType() == DEVICE_OPERATION_TWIN_UNSUBSCRIBE_DESIRED_PROPERTIES_REQUEST)
+                {
+                    //TODO: unsubscribe desired property from application
+                    //this.amqpSessionManager to sever the connection
+                    //twinSubscribed = false;
+                }
                     else
                     {
-                        if (((IotHubTransportMessage) message).getDeviceOperationType() == DEVICE_OPERATION_TWIN_UNSUBSCRIBE_DESIRED_PROPERTIES_REQUEST)
+                        this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_TWIN);
+                        twinSubscribed = true;
+                        if (((IotHubTransportMessage) message).getDeviceOperationType() == DEVICE_OPERATION_TWIN_SUBSCRIBE_DESIRED_PROPERTIES_REQUEST)
                         {
-                            //TODO: unsubscribe
-                            this.amqpsSessionManager.openDeviceOperationLinks(DEVICE_TWIN);
+                            handled = true;
                         }
                     }
                     break;
