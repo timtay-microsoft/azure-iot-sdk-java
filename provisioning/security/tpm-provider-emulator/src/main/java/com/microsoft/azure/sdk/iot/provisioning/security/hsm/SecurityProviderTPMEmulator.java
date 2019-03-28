@@ -7,6 +7,7 @@
 
 package com.microsoft.azure.sdk.iot.provisioning.security.hsm;
 
+import com.microsoft.azure.sdk.iot.provisioning.security.SecurityProvider;
 import com.microsoft.azure.sdk.iot.provisioning.security.SecurityProviderTpm;
 import com.microsoft.azure.sdk.iot.provisioning.security.exceptions.SecurityProviderException;
 import tss.*;
@@ -15,6 +16,7 @@ import tss.tpm.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.BufferUnderflowException;
 import java.util.Arrays;
 
 public class SecurityProviderTPMEmulator extends SecurityProviderTpm
@@ -92,11 +94,39 @@ public class SecurityProviderTPMEmulator extends SecurityProviderTpm
 
         //SRS_SecurityProviderTPMEmulator_25_005: [ The constructor shall save the registration Id if it was provided. ]
         this.registrationId = registrationId;
-        tpm = TpmFactory.localTpmSimulator();
+        tpm = localTpmSimulator2();
         clearPersistent(tpm, EK_PERSISTENT_HANDLE, "EK");
         clearPersistent(tpm, SRK_PERSISTENT_HANDLE, "SRK");
         ekPublic = createPersistentPrimary(tpm, EK_PERSISTENT_HANDLE, TPM_RH.OWNER, EK_TEMPLATE, "EK");
         srkPublic = createPersistentPrimary(tpm, SRK_PERSISTENT_HANDLE, TPM_RH.OWNER, SRK_TEMPLATE, "SRK");
+    }
+
+    public static Tpm localTpmSimulator2() throws SecurityProviderException
+    {
+        new Tpm();
+        TpmDeviceBase device = new TpmDeviceTcp("localhost", 2321);
+        device.powerCycle();
+        Tpm tpm = new Tpm();
+        tpm._setDevice(device);
+        try
+        {
+            tpm.Startup(TPM_SU.CLEAR);
+            tpm.DictionaryAttackLockReset(TPM_HANDLE.from(TPM_RH.LOCKOUT));
+        }
+        catch (BufferUnderflowException e)
+        {
+            try
+            {
+                tpm.close();
+                throw new SecurityProviderException(e);
+            }
+            catch (IOException e1)
+            {
+                throw new SecurityProviderException(e1);
+            }
+        }
+
+        return tpm;
     }
 
     /**
