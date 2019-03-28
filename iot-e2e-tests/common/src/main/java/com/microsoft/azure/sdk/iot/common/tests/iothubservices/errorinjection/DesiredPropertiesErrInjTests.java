@@ -182,55 +182,12 @@ public class DesiredPropertiesErrInjTests extends DeviceTwinCommon
                 ErrorInjectionHelper.DefaultDurationInSec));
     }
 
-    @Test
-    public void subscribeToDesiredPropertiesRecoveredFromAmqpsMethodReqLinkDrop() throws Exception
-    {
-        if (!(testInstance.protocol == AMQPS || testInstance.protocol == AMQPS_WS))
-        {
-            return;
-        }
-
-        if (testInstance.protocol == AMQPS && testInstance.authenticationType == SELF_SIGNED)
-        {
-            //TODO error injection seems to fail under these circumstances. Method Req link is never dropped even if waiting a long time
-            // Need to talk to service folks about this strange behavior
-            return;
-        }
-
-        this.errorInjectionSubscribeToDesiredPropertiesFlow(ErrorInjectionHelper.amqpsMethodReqLinkDropErrorInjectionMessage(
-                ErrorInjectionHelper.DefaultDelayInSec,
-                ErrorInjectionHelper.DefaultDurationInSec));
-    }
-
-    @Test
-    public void subscribeToDesiredPropertiesRecoveredFromAmqpsMethodRespLinkDrop() throws Exception
-    {
-        if (!(testInstance.protocol == AMQPS || testInstance.protocol == AMQPS_WS))
-        {
-            return;
-        }
-
-        if (testInstance.protocol == AMQPS && testInstance.authenticationType == SELF_SIGNED)
-        {
-            //TODO error injection seems to fail under these circumstances. Method Resp link is never dropped even if waiting a long time
-            // Need to talk to service folks about this strange behavior
-            return;
-        }
-
-        this.errorInjectionSubscribeToDesiredPropertiesFlow(ErrorInjectionHelper.amqpsMethodRespLinkDropErrorInjectionMessage(
-                ErrorInjectionHelper.DefaultDelayInSec,
-                ErrorInjectionHelper.DefaultDurationInSec));
-
-    }
-
     public void errorInjectionSubscribeToDesiredPropertiesFlow(Message errorInjectionMessage) throws Exception
     {
         // Arrange
         List<com.microsoft.azure.sdk.iot.device.DeviceTwin.Pair<IotHubConnectionStatus, Throwable>> actualStatusUpdates = new ArrayList<>();
         setConnectionStatusCallBack(actualStatusUpdates);
         subscribeToDesiredPropertiesAndVerify(1);
-
-        System.out.println("finishing with normal operation");
 
         // Act
         errorInjectionMessage.setExpiryTime(100);

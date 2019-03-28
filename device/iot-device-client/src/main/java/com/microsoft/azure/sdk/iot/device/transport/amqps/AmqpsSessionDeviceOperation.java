@@ -211,8 +211,10 @@ public class AmqpsSessionDeviceOperation
      * @param session the Proton session to open the links on.
      * @throws TransportException throw if Proton operation throws.
      */
-    void openLinks(Session session, MessageType msgType) throws TransportException
+    boolean openLinks(Session session, MessageType msgType) throws TransportException
     {
+        boolean waitForRemoteOpenCallback = false;
+
         logger.LogDebug("Entered in method %s", logger.getMethodName());
 
         // Codes_SRS_AMQPSESSIONDEVICEOPERATION_12_042: [The function shall do nothing if the session parameter is null.]
@@ -238,12 +240,13 @@ public class AmqpsSessionDeviceOperation
                 synchronized (this.openLock)
                 {
                     // Codes_SRS_AMQPSESSIONDEVICEOPERATION_12_009: [The function shall call openLinks on all device operations if the authentication state is authenticated.]
-                    this.amqpsDeviceOperationsMap.get(msgType).openLinks(session);
+                    waitForRemoteOpenCallback = this.amqpsDeviceOperationsMap.get(msgType).openLinks(session);
                 }
             }
         }
 
         logger.LogDebug("Exited from method %s", logger.getMethodName());
+        return waitForRemoteOpenCallback;
     }
 
     /**
