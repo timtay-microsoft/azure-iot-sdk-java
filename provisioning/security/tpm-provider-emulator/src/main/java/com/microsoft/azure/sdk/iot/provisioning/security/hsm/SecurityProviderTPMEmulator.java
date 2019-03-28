@@ -118,7 +118,7 @@ public class SecurityProviderTPMEmulator extends SecurityProviderTpm
             try
             {
                 tpm.close();
-                throw new SecurityProviderException(e);
+                return localTpmSimulator2();
             }
             catch (IOException e1)
             {
