@@ -1,0 +1,314 @@
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+resources:
+- repo: self
+  clean: true
+phases:
+
+### Linux build ###
+- phase: LINUX
+  displayName: Linux
+
+  condition: succeeded()
+  queue:
+    name: Hosted Ubuntu 1604
+    timeoutInMinutes: 180
+  steps:
+- script: |
+   echo BRANCH_TO_MERGE_TO: $BRANCH_TO_MERGE_TO
+   echo COMMIT_ID: $COMMIT_ID
+   echo PRID: $PRID
+   echo ADDITIONAL_NOTES_TO_LOG: $ADDITIONAL_NOTES_TO_LOG
+  displayName: 'Input Arguments'
+  env:
+    COMMIT_ID: $(COMMIT_ID)
+    BRANCH_TO_MERGE_TO: $(BRANCH_TO_MERGE_TO)
+    PRID: $(PRID)
+
+- script: |
+   git config --global user.email "azioclb@microsoft.com"
+   git config --global user.name "Azure IoT Builder"
+   if [ "$PRID" == "" ]
+   then 
+    git status
+    git reset --hard
+    git pull origin $COMMIT_ID
+    git checkout origin/$COMMIT_ID
+    git pull origin $BRANCH_TO_MERGE_TO
+    git checkout origin/$BRANCH_TO_MERGE_TO
+    git merge origin/$COMMIT_ID
+   else
+    git fetch origin +refs/pull/*/head:refs/remotes/origin/pr/*
+    git checkout pr/$PRID
+    git checkout $BRANCH_TO_MERGE_TO
+    git merge pr/$PRID -m "Merging PR $PRID"
+   
+   fi
+  displayName: 'Download Repo'
+  env:
+    COMMIT_ID: $(COMMIT_ID)
+    BRANCH_TO_MERGE_TO: $(BRANCH_TO_MERGE_TO)
+    PRID: $(PRID)
+
+- task: Docker@1
+  displayName: 'Start TPM Simulator'
+  inputs:
+    containerregistrytype: 'Container Registry'
+    command: 'Run an image'
+    imageName: aziotbld/testtpm
+    containerName: 'testtpm-instance'
+    ports: |
+     127.0.0.1:2321:2321
+     127.0.0.1:2322:2322
+    restartPolicy: unlessStopped
+
+- script: |
+   if [ -f "jenkins/linux_java.sh" ]
+   then
+    jenkins/linux_java.sh
+   fi
+  displayName: 'linux_java'
+  env:
+    IOT_DPS_CONNECTION_STRING: $(LINUX-IOT-DPS-CONNECTION-STRING)
+    IOTHUB_EVENTHUB_CONNECTION_STRING: $(LINUX-IOTHUB-EVENTHUB-CONNECTION-STRING)
+    IOT_DPS_ID_SCOPE: $(LINUX-IOT-DPS-ID-SCOPE)
+    IOTHUB_CONNECTION_STRING: $(LINUX-IOTHUB-CONNECTION-STRING)
+    IOT_DPS_TPM_SIMULATOR_IP_ADDRESS: $(LINUX-IOT-DPS-TPM-SIMULATOR-IP-ADDRESS)
+    IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+    STORAGE_ACCOUNT_CONNECTION_STRING: $(LINUX-STORAGE-ACCOUNT-CONNECTION-STRING)
+    IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+    IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+    DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+    PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+    FAR_AWAY_IOTHUB_CONNECTION_STRING: $(FAR-AWAY-IOTHUB-CONNECTION-STRING)
+    CUSTOM_ALLOCATION_POLICY_WEBHOOK: $(CUSTOM-ALLOCATION-POLICY-WEBHOOK)
+
+- task: Maven@3
+  displayName: 'Maven build'
+  inputs:
+    goals: install
+    options: '-DskipITs=false -T 2C -Dfailsafe.rerunFailingTestsCount=2 -DIOT_DPS_CONNECTION_STRING=$(LINUX-IOT-DPS-CONNECTION-STRING) -DIOTHUB_EVENTHUB_CONNECTION_STRING=$(LINUX-IOTHUB-EVENTHUB-CONNECTION-STRING) -DIOT_DPS_ID_SCOPE=$(LINUX-IOT-DPS-ID-SCOPE) -DIOTHUB_CONNECTION_STRING=$(LINUX-IOTHUB-CONNECTION-STRING) -DIOT_DPS_TPM_SIMULATOR_IP_ADDRESS=$(LINUX-IOT-DPS-TPM-SIMULATOR-IP-ADDRESS) -DIOT_DPS_GLOBAL_ENDPOINT=$(IOT-DPS-GLOBAL-ENDPOINT) -DSTORAGE_ACCOUNT_CONNECTION_STRING=$(LINUX-STORAGE-ACCOUNT-CONNECTION-STRING)  -DIOTHUB_DEVICE_CONN_STRING_INVALIDCERT=$(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT) -DIOTHUB_CONN_STRING_INVALIDCERT=$(IOTHUB-CONN-STRING-INVALIDCERT) -DDPS_GLOBALDEVICEENDPOINT_INVALIDCERT=$(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT) -DPROVISIONING_CONNECTION_STRING_INVALIDCERT=$(PROVISIONING-CONNECTION-STRING-INVALIDCERT) '
+    testResultsFiles: '**/TEST-*.xml'
+    jdkVersionOption: 1.8
+    findBugsRunAnalysis: true
+  enabled: false
+
+- task: CopyFiles@2
+  displayName: 'Copy Test Results to Artifact Staging Directory'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: |
+     **/*.trx
+     **/*.xml
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  continueOnError: true
+  condition: always()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact Staging Directory'
+  continueOnError: true
+  condition: always()
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    mergeTestResults: true
+  continueOnError: true
+  condition: always()
+
+
+### Windows build ###
+
+- phase: WINDOWS
+  displayName: Windows
+
+  condition: succeeded()
+  queue:
+    name: Hosted VS2017
+    timeoutInMinutes: 180
+steps:
+- script: |
+   echo BRANCH_TO_MERGE_TO %BRANCH_TO_MERGE_TO%
+   echo COMMIT_ID: %COMMIT_ID%
+   echo PRID: %PRID%
+   echo ADDITIONAL_NOTES_TO_LOG: %ADDITIONAL_NOTES_TO_LOG%
+  failOnStderr: true
+  displayName: 'Input Arguments'
+  env:
+    COMMIT_ID: $(COMMIT_ID)
+    BRANCH_TO_MERGE_TO: $(BRANCH_TO_MERGE_TO)
+    PRID: $(PRID)
+
+- script: |
+   @echo off
+   git config --global user.email "azioclb@microsoft.com"
+   git config --global user.name "Azure IoT Builder"
+   IF "%PRID%"=="" (
+   git status
+   git reset --hard
+   git pull origin %COMMIT_ID%
+   git checkout origin/%COMMIT_ID%
+   git pull origin %BRANCH_TO_MERGE_TO%
+   git checkout origin/%BRANCH_TO_MERGE_TO%
+   git merge origin/%COMMIT_ID%
+   git status
+   EXIT
+   )
+   git fetch origin +refs/pull/*/head:refs/remotes/origin/pr/*
+   git checkout pr/%PRID%
+   git checkout %BRANCH_TO_MERGE_TO%
+   git merge pr/%PRID% -m "Merging PR %PRID%"
+   
+  displayName: 'Download Repo'
+  env:
+    COMMIT_ID: $(COMMIT_ID)
+    BRANCH_TO_MERGE_TO: $(BRANCH_TO_MERGE_TO)
+    PRID: $(PRID)
+
+- script: 'Start provisioning\provisioning-tools\tpm-simulator\Simulator.exe'
+  displayName: 'Start Tpm Simulator'
+
+- script: |
+   if exist jenkins\windows_java.cmd (
+   jenkins\windows_java.cmd )
+  displayName: 'windows_java'
+  env:
+    IOT_DPS_CONNECTION_STRING: $(WINDOWS-IOT-DPS-CONNECTION-STRING)
+    IOTHUB_EVENTHUB_CONNECTION_STRING: $(WINDOWS-IOTHUB-EVENTHUB-CONNECTION-STRING)
+    IOT_DPS_ID_SCOPE: $(WINDOWS-IOT-DPS-ID-SCOPE)
+    IOTHUB_CONNECTION_STRING: $(WINDOWS-IOTHUB-CONNECTION-STRING)
+    IOT_DPS_TPM_SIMULATOR_IP_ADDRESS: $(WINDOWS-IOT-DPS-TPM-SIMULATOR-IP-ADDRESS)
+    IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+    STORAGE_ACCOUNT_CONNECTION_STRING: $(WINDOWS-STORAGE-ACCOUNT-CONNECTION-STRING)
+    IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+    IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+    DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+    PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+    CUSTOM_ALLOCATION_POLICY_WEBHOOK: $(CUSTOM-ALLOCATION-POLICY-WEBHOOK)
+    FAR_AWAY_IOTHUB_CONNECTION_STRING: $(FAR-AWAY-IOTHUB-CONNECTION-STRING)
+
+- task: CopyFiles@2
+  displayName: 'Copy Test Results to Artifact Staging Directory'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: |
+     **/*.trx
+     **/*.xml
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  continueOnError: true
+  condition: always()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact Staging Directory'
+  continueOnError: true
+  condition: always()
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    mergeTestResults: true
+  continueOnError: true
+  condition: always()
+
+### SDL Tasks ###
+- phase: SDL
+  displayName: SDL Tasks
+  condition: succeeded()
+pool:
+  name: sdl-java
+  timeoutInMinutes: 60
+steps:
+- script: |
+   @echo off
+   git config --global user.email "azioclb@microsoft.com"
+   git config --global user.name "Azure IoT Builder"
+   IF "%PRID%"=="" (
+   git status
+   git reset --hard
+   git pull origin %COMMIT_ID%
+   git checkout origin/%COMMIT_ID%
+   git pull origin %BRANCH_TO_MERGE_TO%
+   git checkout origin/%BRANCH_TO_MERGE_TO%
+   git merge origin/%COMMIT_ID%
+   git status
+   EXIT
+   )
+   git fetch origin +refs/pull/*/head:refs/remotes/origin/pr/*
+   git checkout pr/%PRID%
+   git checkout %BRANCH_TO_MERGE_TO%
+   git merge pr/%PRID% -m "Merging PR %PRID%"
+   
+  displayName: 'Download Repo'
+  env:
+    COMMIT_ID: $(COMMIT_ID)
+    BRANCH_TO_MERGE_TO: $(BRANCH_TO_MERGE_TO)
+    PRID: $(PRID)
+
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  displayName: 'Component Detection'
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+  displayName: CredScan
+  inputs:
+    debugMode: false
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-autoapplicability.AutoApplicability@1
+  displayName: AutoApplicability
+  inputs:
+    ApplyRules: All
+    VerboseWriter: true
+    ExternalRelease: true
+    InternalRelease: true
+    UsesHSM: true
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-vulnerabilityassessment.VulnerabilityAssessment@0
+  displayName: 'Vulnerability Assessment'
+
+- task: fortifyvsts.hpe-security-fortify-vsts.build-task-fortify-sca.FortifySCA@1
+  displayName: Fortify
+  inputs:
+    applicationType: java
+    buildClasspath: '$(Build.SourcesDirectory)'
+    buildSourceVersion: 1.8
+    buildSourcePath: '$(Build.SourcesDirectory)'
+    buildAnalyzerParams: '-exclude "$(Build.SourcesDirectory)\**\test\**\*" -exclude "$(Build.SourcesDirectory)\**\*sample*\**\*" -exclude "$(Build.SourcesDirectory)\edge-e2e\**\*" -exclude "$(Build.SourcesDirectory)\iot-e2e-tests\**\*" -exclude "$(Build.SourcesDirectory)\provisioning\provisioning-tools\**\*"'
+    fortifyBuildId: 12345
+    scaVerbose: true
+    scaDebug: true
+    additionalScanParams: '-filter "$(Build.SourcesDirectory)\vsts\fortify\filter.txt"'
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@1
+  displayName: PoliCheck
+  inputs:
+    targetType: F
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-antimalware.AntiMalware@3
+  displayName: 'AntiMalware Scanner'
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-publishsecurityanalysislogs.PublishSecurityAnalysisLogs@2
+  displayName: 'Publish Security Analysis Logs'
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
+  displayName: 'Post Analysis'
+  inputs:
+    CredScan: true
+    FortifySCA: true
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@1
+  displayName: 'TSA upload'
+  inputs:
+    tsaVersion: TsaV2
+    codebase: NewOrUpdate
+    tsaEnvironment: Production
+    codeBaseName: 'Azure-Iot-SDK-Java-Master'
+    instanceUrlForTsaV2: MSAZURE
+    projectNameMSAZURE: One
+    areaPath: 'One\IoT\Platform\Clients\java'
+    iterationPath: 'One\IoT\Backlog'
+    uploadAPIScan: false
+    uploadBinSkim: false
+    uploadFxCop: false
+    uploadModernCop: false
+    uploadPREfast: false
+    uploadRoslyn: false
+    uploadTSLint: false
+
